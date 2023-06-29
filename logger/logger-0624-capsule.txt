@@ -1,0 +1,9 @@
+pred: 12448
+truth: 12222
+/media/wall/4TB_HDD/full_dataset/0511_dataset/capsule/test/12222_25-0.png
+['12448', '12222', '227']
+pred: 6081
+truth: 12183
+/media/wall/4TB_HDD/full_dataset/0511_dataset/capsule/test/12183_0-0.png
+['6081', '12183', '617']
+{'12183', '12222'}
