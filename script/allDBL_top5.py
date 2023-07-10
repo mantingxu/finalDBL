@@ -23,15 +23,11 @@ class MyDBL(nn.Module):
 class MyMLP(nn.Module):
     def __init__(self, inputDim):
         super(MyMLP, self).__init__()
-        self.linearOne = nn.Linear(inputDim, 512)
-        self.linearTwo = nn.Linear(512, 128)
-        self.linearThree = nn.Linear(128, 64)
-        # self.linearOne = nn.Linear(inputDim, 128)
-        # self.linearTwo = nn.Linear(128, 64)
-        self.linearFour = nn.Linear(64, 3)
+        self.linearOne = nn.Linear(inputDim, 128)
+        self.linearTwo = nn.Linear(128, 64)
+        self.linearThree = nn.Linear(64, 5)
         self.ReLUOne = nn.ReLU()
         self.ReLUTwo = nn.ReLU()
-        self.ReLUThree = nn.ReLU()
 
     def forward(self, f):
         o = self.linearOne(f)
@@ -39,8 +35,6 @@ class MyMLP(nn.Module):
         o = self.linearTwo(o)
         o = self.ReLUTwo(o)
         o = self.linearThree(o)
-        o = self.ReLUThree(o)
-        o = self.linearFour(o)
         return o
 
 
@@ -63,13 +57,13 @@ class DBLANet(nn.Module):
         embedding_f1 = self.embedding(f_split[0])
         embedding_f2 = self.embedding(f_split[1])
         embedding_f3 = self.embedding(f_split[2])
-        # embedding_f4 = self.embedding(f_split[3])
-        # embedding_f5 = self.embedding(f_split[4])
+        embedding_f4 = self.embedding(f_split[3])
+        embedding_f5 = self.embedding(f_split[4])
         f1_prime = self.dblOne(fx, embedding_f1)
         f2_prime = self.dblOne(fx, embedding_f2)
         f3_prime = self.dblOne(fx, embedding_f3)
-        # f4_prime = self.dblOne(fx, embedding_f4)
-        # f5_prime = self.dblOne(fx, embedding_f5)
-        final_f = torch.hstack((f1_prime, f2_prime, f3_prime))
+        f4_prime = self.dblOne(fx, embedding_f4)
+        f5_prime = self.dblOne(fx, embedding_f5)
+        final_f = torch.hstack((f1_prime, f2_prime, f3_prime, f4_prime, f5_prime))
         res = self.mlp(final_f)
         return res

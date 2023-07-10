@@ -18,11 +18,11 @@ def get_key(l, val):
     for key, value in l.items():
         if val == value:
             return key
-    return "key doesn't exist"
+    return -1
 
 
 def predict_capsule_id():
-    logger_path = '../logger/logger-0707-capsule.txt'
+    logger_path = '../logger/logger-0710-pill.txt'
     logging.basicConfig(filename=logger_path, level=logging.INFO, format="%(message)s", filemode="w")
     print('logger path: ', logger_path)
     count = 0
@@ -31,9 +31,10 @@ def predict_capsule_id():
     trueList = []
     predictList = []
 
-    test_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/capsule/test/*.png'
-
+    test_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0621/test_remove_full/*.png'
+    fileList = []
     for filename in glob.glob(test_path):
+        name = filename.split('/')[-1]
         input_image = Image.open(filename)
         preprocess = transforms.Compose([
             transforms.ToTensor(),
@@ -46,7 +47,8 @@ def predict_capsule_id():
         input_batch = input_tensor.unsqueeze(0)  # create a mini-batch as expected by the model
 
         # https://codeantenna.com/a/FMqJsklDXI
-        path = "/media/wall/4TB_HDD/0611_finalDBL/weight/denseNet/capsule_denseNet.pth"
+        path = "/media/wall/4TB_HDD/0611_finalDBL/weight/denseNet/pill_denseNet_0710.pth"
+        # path = "/media/wall/4TB_HDD/0611_finalDBL/weight/pill_densenet.pth"
         model = torch.load(path)
         # predict model
         model.eval()
@@ -57,7 +59,7 @@ def predict_capsule_id():
             model.to('cuda')
 
         try:
-            json_file = open('../label/capsule_class_indices.json', 'r')
+            json_file = open('../label/new_pill_class_indices.json', 'r')
             class_indict = json.load(json_file)
         except Exception as e:
             print(e)
@@ -67,7 +69,7 @@ def predict_capsule_id():
             # predict class
             output = torch.squeeze(model(input_batch))
             predict = torch.softmax(output, dim=0)
-            top5_prob, top5_id = torch.topk(predict, 3)
+            top5_prob, top5_id = torch.topk(predict, 5)
             top5_prob = top5_prob.cpu().numpy()
             top5_id = top5_id.cpu().numpy()
             # predict custom pill id (top-1 custom id)
@@ -76,6 +78,9 @@ def predict_capsule_id():
             # true pill ID
             truth = filename.split('/')[-1].split('_')[0]
             true_id = get_key(class_indict, truth)
+            # print(true_id)
+            if true_id == -1:
+                continue
             trueList.append(int(true_id))
             predictList.append(int(predict_cla))
 
@@ -83,7 +88,7 @@ def predict_capsule_id():
             top5_real_id_numpy = []
             for i in top5_id_numpy:
                 top5_real_id_numpy.append(class_indict[str(i)])
-            print(top5_real_id_numpy)
+            # print(top5_real_id_numpy)
             # count += 1
 
             # pre_message = 'pred: ' + pred
@@ -93,7 +98,10 @@ def predict_capsule_id():
             # logging.info(filename)
             # logging.info(top5_real_id_numpy)
             if pred != truth:
+                fileList.append(name)
                 count += 1
+                print(true_id)
+                print(top5_real_id_numpy)
                 error_pills.add(truth)
                 #     error_pills.add(truth)
                 pre_message = 'pred: ' + pred
@@ -107,13 +115,12 @@ def predict_capsule_id():
 
     class_names = list(class_indict.keys())
     cf_matrix = confusion_matrix(trueList, predictList)
-    df_cm = pd.DataFrame(cf_matrix, class_names,
-                         class_names)  # https://sofiadutta.github.io/datascience-ipynbs/pytorch/Image-Classification-using-PyTorch.html
+    # df_cm = pd.DataFrame(cf_matrix, class_names, class_names)  # https://sofiadutta.github.io/datascience-ipynbs/pytorch/Image-Classification-using-PyTorch.html
 
-    ndarray = np.asarray(df_cm)
+    # ndarray = np.asarray(df_cm)
 
     # os.makedirs('../csv', exist_ok=True)
-    # df_cm.to_csv('../csv/confusion_capsule0603.csv')
+    # df_cm.to_csv('../csv/confusion_pill_0603_top3.csv')
 
     # logging.info('confusion matrix pair')
     # for i in range(len(ndarray[0])):
@@ -125,22 +132,25 @@ def predict_capsule_id():
     #                 logging.info(ndarray[i][j])
 
     plt.figure(figsize=(9, 6))
-    sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
+    # sns.heatmap(df_cm, annot=True, fmt="d", cmap='BuGn')
+    # sns.heatmap(df_cm, annot=False, fmt="d", cmap='BuGn')
     plt.xlabel("prediction")
     plt.ylabel("label (ground truth)")
-    plt.savefig("../confusion_matrix_pill/confusion_matrix_capsule0708.png")
-    test_dir = '/media/wall/4TB_HDD/full_dataset/0511_dataset/capsule/test/'
+    plt.savefig("../confusion_matrix_pill/confusion_matrix_pill_0710.png")
+    test_dir = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0621/test_remove_full/'
     test_data_length = len(os.listdir(test_dir))
 
-    print(test_data_length)
-    print(count)
-    print(top5_count)
+    print('total test data length: ', test_data_length)
+    print('error predict not in top-1:', count)
+    print('error predict not in top-5:', top5_count)
     accuracy = ((test_data_length - count) / test_data_length) * 100
     top5_accuracy = ((test_data_length - top5_count) / test_data_length) * 100
     print('test accuracy:' + str(accuracy) + '%')
     print('top-5 test accuracy:' + str(top5_accuracy) + '%')
-    print(error_pills)
+    print('error pill classes: ', error_pills)
+    print('error pill classes number:', len(error_pills))
     logging.info(error_pills)
+    print('file name: ', fileList)
     return model
 
 

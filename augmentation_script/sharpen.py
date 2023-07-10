@@ -19,6 +19,7 @@ def rotate_img(img_cv2):
     # img = Image.open(image_path)
 
     angle = random.randint(1, 360)
+    # angle = 360
     rotated_img = img.rotate(angle)
 
     # rotated_img = rotated_img.save(dst_path)
@@ -26,17 +27,20 @@ def rotate_img(img_cv2):
     return rotated_img
 
 
-pillId = os.listdir('/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/train/pill_remove/')
-# pillId = ['10249']
+# pillId = os.listdir('/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/train/pill_remove/')
+pillId = ['30']
 for pill in pillId:
     count = 0
-    folderPath = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/test_remove/{pillId}_*.png'.format(pillId=pill)
+    # folderPath = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/test_remove/{pillId}_*.png'.format(pillId=pill)
+    folderPath = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/test_remove/30_39-0.png'.format(pillId=pill)
     for file_name in glob.glob(folderPath):
         origin_img = cv2.imread(file_name)
-        image = sharpen(origin_img)
+        # image = sharpen(origin_img)
+        image = origin_img
         rotated = rotate_img(image)
-        save_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/augmentation/test_sharpen/{original}_{' \
-                    'count}.png'.format(pillId=pill, original=pill, count=count)
-        # save_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/test_append/test/test_sharpen_rotated.png'
+        # save_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/augmentation/test_sharpen/{original}_{' \
+        #             'count}.png'.format(pillId=pill, original=pill, count=count)
+        save_path = '/home/wall/rotated.png'
         cv2.imwrite(save_path, rotated)
         count += 1
+        # break

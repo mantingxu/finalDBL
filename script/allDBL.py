@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-output_dim = 512
+output_dim = 1024
 
 
 class MyDBL(nn.Module):

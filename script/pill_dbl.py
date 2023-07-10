@@ -7,12 +7,12 @@ from pillDBL import DBLANet
 import matplotlib.pyplot as plt
 import json
 
-output_dim = 1024
+output_dim = 512
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-num_epochs = 300
-learning_rate = 0.0001
+num_epochs = 5
+learning_rate = 0.0005
 inputDim = output_dim * 3
 
 model = DBLANet(inputDim).to(device)
@@ -43,7 +43,7 @@ class ExampleDataset(Dataset):
 
 
 def saveModel():
-    path = "/media/wall/4TB_HDD/0611_finalDBL/weight/pill_dbl_0629_1.pth"
+    path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/pill_dbl_top3_0710.pth"
     torch.save(model.state_dict(), path)
     print('save')
 
@@ -62,8 +62,8 @@ except Exception as e:
     print(e)
     exit(-1)
 
-
-dataset = ExampleDataset('/media/wall/4TB_HDD/0611_finalDBL/numpy/pill_dbl_train.npy')
+dataset = ExampleDataset('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/pill_dbl_train_top3.npy')
+# dataset = ExampleDataset('/media/wall/4TB_HDD/0611_finalDBL/numpy/pill_dbl_train.npy')
 print(dataset.__len__())
 train_length = int(dataset.__len__() * 0.6)
 valid_length = dataset.__len__() - train_length
@@ -91,6 +91,15 @@ for epoch in range(num_epochs):
         labels = torch.LongTensor(labels)
         labels = labels.to(device)
         labels_idx = []
+        # for idx in range(pillIdList.size(0)): # 3
+        #     print(labels[idx].item())
+        #     convertPillIdList = pillIdList.tolist()[0]
+        #     try:
+        #         index = convertPillIdList.index(labels[idx].item())
+        #     except:
+        #         index = 100000
+        #     print(index)
+        #     labels_idx.append(index)
         for idx in range(pillIdList.size(0)):
             labels_idx.append((pillIdList[idx] == labels[idx]).nonzero(as_tuple=True)[0].item())
         labels_idx = torch.LongTensor(labels_idx)

@@ -6,7 +6,7 @@ import torch.nn.functional as Fun
 import copy
 from pillDBL import DBLANet
 
-output_dim = 1024
+output_dim = 512
 inputDim = output_dim * 3
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -35,12 +35,13 @@ class ExampleDataset(Dataset):
 
 # dataset = ExampleDataset('../numpy/myResTrain0520_1.npy')
 # train_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=4, shuffle=True)
-test_dataset = ExampleDataset('/media/wall/4TB_HDD/0611_finalDBL/numpy/pill_dbl_test.npy')
+# test_dataset = ExampleDataset('/media/wall/4TB_HDD/0611_finalDBL/numpy/pill_dbl_test.npy')
+test_dataset = ExampleDataset('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/pill_dbl_test_top3.npy')
 print(test_dataset.__len__())
 test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=1, shuffle=True)
 
 
-path = "/media/wall/4TB_HDD/0611_finalDBL/weight/pill_dbl_0629_1.pth"
+path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/pill_dbl_top3_0710.pth"
 model.load_state_dict(torch.load(path))
 model.eval()
 count = 0

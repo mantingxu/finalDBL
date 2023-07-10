@@ -15,12 +15,12 @@ import os
 import copy
 import torch.utils.data as data
 
-data_dir = '/media/wall/4TB_HDD/full_dataset/0710_dataset/train'
+data_dir = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0621/train/pill_final'
 # valid_data_dir = '/media/wall/4TB_HDD/1211_dataset/split_train_valid/valid_pytorch'
 model_name = "densenet"
-num_classes = 215
-batch_size = 64
-num_epochs = 50
+num_classes = 179
+batch_size = 32
+num_epochs = 60
 # Flag for feature extracting. When False, we finetune the whole model,
 #   when True we only update the reshaped layer params
 feature_extract = False
@@ -110,7 +110,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
 
 def saveModel():
-    path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/all_denseNet_2.pth"
+    path = "/media/wall/4TB_HDD/0611_finalDBL/weight/denseNet/pill_denseNet_0710.pth"
     # torch.save(model.state_dict(), path)
     torch.save(model_ft, path)
 
@@ -142,14 +142,15 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Fa
 # Initialize the model for this run
 model_ft, input_size = initialize_model(model_name, num_classes, feature_extract, use_pretrained)
 
+
 print("Initializing Datasets and Dataloaders...")
 dataset = torchvision.datasets.ImageFolder(data_dir,
-                                           transform=transforms.Compose([
-                                               transforms.ToTensor(),
-                                               transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-                                               # transforms.Normalize(mean=[0.137, 0.134, 0.116], std=[0.293, 0.286, 0.254]),
-                                           ])
-                                           )
+                                             transform=transforms.Compose([
+                                                 transforms.ToTensor(),
+                                                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+                                                 #transforms.Normalize(mean=[0.137, 0.134, 0.116], std=[0.293, 0.286, 0.254]),
+                                             ])
+                                             )
 
 # valid_set = torchvision.datasets.ImageFolder(valid_data_dir,
 #                                              transform=transforms.Compose([
@@ -169,9 +170,9 @@ pill_list = dataset.class_to_idx
 # pill_list = train_set.class_to_idx
 
 
-# train_set_size = int(len(train_set) * 0.7)
-# valid_set_size = len(train_set) - train_set_size
-# train_set, valid_set = data.random_split(train_set, [train_set_size, valid_set_size])
+#train_set_size = int(len(train_set) * 0.7)
+#valid_set_size = len(train_set) - train_set_size
+#train_set, valid_set = data.random_split(train_set, [train_set_size, valid_set_size])
 
 train_set_size = int(len(train_set))
 valid_set_size = int(len(valid_set))
@@ -193,13 +194,14 @@ cla_dict = dict((val, key) for key, val in pill_list.items())
 import json
 
 json_str = json.dumps(cla_dict, indent=4)
-with open('../label/all_drug_class_indices.json', 'w') as json_file:
-    json_file.write(json_str)
+with open('../label/new_pill_class_indices.json', 'w') as json_file:
+   json_file.write(json_str)
 
 # Create training and validation dataloaders
 dataloaders_dict = {
     x: torch.utils.data.DataLoader(image_datasets[x], batch_size=batch_size, num_workers=4, shuffle=True) for x in
     ['train', 'val']}
+
 
 # Detect if we have a GPU available
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -225,6 +227,7 @@ criterion = nn.CrossEntropyLoss()
 # Train and evaluate
 model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs,
                              is_inception=False)
+
 
 # Plot the training curves of validation accuracy vs. number
 #  of training epochs for the transfer learning method and

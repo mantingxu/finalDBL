@@ -3,23 +3,22 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import Dataset
 import copy
-from pillDBL_top5 import DBLANet
+from allDBL import DBLANet
 import matplotlib.pyplot as plt
 import json
 
-output_dim = 512
+output_dim = 1024
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-num_epochs = 5
-learning_rate = 0.0002
-inputDim = output_dim * 5
+num_epochs = 10
+learning_rate = 0.0001
+inputDim = output_dim * 3
 
 model = DBLANet(inputDim).to(device)
 
 criterion = nn.CrossEntropyLoss().cuda()
-# optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate) # capsule use
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+optimizer = torch.optim.RMSprop(model.parameters(), lr=learning_rate)
 # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=0.02)
 
 
@@ -43,7 +42,7 @@ class ExampleDataset(Dataset):
 
 
 def saveModel():
-    path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/pill_dbl_top5_0710.pth"
+    path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/all_dbl.pth"
     torch.save(model.state_dict(), path)
     print('save')
 
@@ -56,20 +55,20 @@ def get_key_from_value(d, val):
 
 
 try:
-    json_file = open('../label/new_pill_class_indices.json', 'r')
+    json_file = open('../label/all_drug_class_indices.json', 'r')
     class_indict = json.load(json_file)
 except Exception as e:
     print(e)
     exit(-1)
 
-dataset = ExampleDataset('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/pill_dbl_train_top5.npy')
-# dataset = ExampleDataset('/media/wall/4TB_HDD/0611_finalDBL/numpy/pill_dbl_train_top5.npy')
+
+dataset = ExampleDataset('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/dbl_train_all_top3.npy')
 print(dataset.__len__())
 train_length = int(dataset.__len__() * 0.6)
 valid_length = dataset.__len__() - train_length
 train_set, valid_set = torch.utils.data.random_split(dataset, [train_length, valid_length])
-train_loader = torch.utils.data.DataLoader(dataset=train_set, batch_size=16, shuffle=True)
-val_loader = torch.utils.data.DataLoader(dataset=valid_set, batch_size=4, shuffle=True)
+train_loader = torch.utils.data.DataLoader(dataset=train_set, batch_size=8, shuffle=True)
+val_loader = torch.utils.data.DataLoader(dataset=valid_set, batch_size=1, shuffle=True)
 
 best_loss = 999
 history = []
@@ -82,40 +81,33 @@ for epoch in range(num_epochs):
     print(epoch)
     for i, (imagesQuery, pillIdList, labels, file) in enumerate(train_loader):
         imagesQuery = imagesQuery.to(device)
-        # print(pillIdList)
         # pillIdList = torch.stack(pillIdList, dim=1)
         pillIdList = torch.LongTensor(pillIdList)
         pillIdList = pillIdList.to(device)
+
         labels = list(labels)
         labels = [int(x) for x in labels]
         labels = torch.LongTensor(labels)
         labels = labels.to(device)
-        # print(labels)
         labels_idx = []
-        # labels_idx = []
-        # for idx in range(pillIdList.size(0)): # 3
-        #     print(labels[idx].item())
-        #     convertPillIdList = pillIdList.tolist()[0]
-        #     try:
-        #         index = convertPillIdList.index(labels[idx].item())
-        #     except:
-        #         index = 1000
-        #     # print(index)
-        #     labels_idx.append(index)
         for idx in range(pillIdList.size(0)):
+            #print(pillIdList[idx])
+            #print(labels[idx])
+            #print(file[idx])
+
             labels_idx.append((pillIdList[idx] == labels[idx]).nonzero(as_tuple=True)[0].item())
         labels_idx = torch.LongTensor(labels_idx)
         labels_idx = labels_idx.to(device)
+        #print(pillIdList)
+        #print(labels)
+        #print(labels_idx)
         # init optimizer
         optimizer.zero_grad()
-
 
         # forward -> backward -> update
         outputs = model(imagesQuery, pillIdList)
         value, indices = torch.max(outputs.data, 1)
-
         loss = criterion(outputs, labels_idx)
-
         total_loss += loss.item()
         #for param in model.named_parameters():
         #    print(param[0], param[1].requires_grad)

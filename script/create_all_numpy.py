@@ -5,19 +5,17 @@ import glob
 import numpy as np
 import json
 import os
+import random
 
-# model related
-# path = "/media/wall/4TB_HDD/0611_finalDBL/weight/pill_densenet.pth"
-# path = "/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/train/densenet_weight/test_accuracy_pill_0618.pth"
-# path = "/media/wall/4TB_HDD/0611_finalDBL/weight/denseNet/pill_denseNet.pth"
-path = "/media/wall/4TB_HDD/0611_finalDBL/weight/denseNet/pill_denseNet_0710.pth"
+
+path = "/media/wall/4TB_HDD/full_dataset/0710_dataset/weight/all_denseNet_2.pth"
 model = torch.load(path)
 model.eval()
 img_list = []
 vector_list = []
-print(model.features)
+
 try:
-    json_file = open('../label/new_pill_class_indices.json', 'r')
+    json_file = open('../label/all_drug_class_indices.json', 'r')
     class_indict = json.load(json_file)
 except Exception as e:
     print(e)
@@ -55,31 +53,25 @@ def get_label(query_path):
     # label = id_to_label[pill_id]
     return key
 
-
 import copy
-
-
 def swapPositions(list, pos1, pos2):
+
     tempList = copy.deepcopy(list)
     tempList[pos1], tempList[pos2] = tempList[pos2], tempList[pos1]
+    print(type(list))
+    print(type(tempList))
     return tempList
-
 
 many_res = []
 total = 0
 count = 0
-not_in_top5 = 0
 
-pill_path = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0603/train_aug/'
+pill_path = '/media/wall/4TB_HDD/full_dataset/0710_dataset/train/'
 pill_ids = os.listdir(pill_path)
-print(pill_ids)
-
-
+# print(pill_ids)
 for pill_id in pill_ids:
-    # query_pic_folder = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0621/test_remove_full/{pill_id}_*.png'.format(
-    #     pill_id=pill_id)
-    query_pic_folder = '/media/wall/4TB_HDD/full_dataset/0511_dataset/pill0621/train/pill_final/{pill_id}/{' \
-                       'pill_id}_*.png'.format(pill_id=pill_id)
+    # query_pic_folder = '/media/wall/4TB_HDD/full_dataset/0710_dataset/train/{pill_id}/{pill_id}_*.png'.format(pill_id=pill_id)
+    query_pic_folder = '/media/wall/4TB_HDD/full_dataset/0710_dataset/test/{pill_id}_*.png'.format(pill_id=pill_id)
     for query_pic_path in glob.glob(query_pic_folder):
         count += 1
         file = query_pic_path.split('/')[-1]
@@ -96,27 +88,30 @@ for pill_id in pill_ids:
         img_tensor = transform(query_img).unsqueeze(0).to('cuda')
         denseNet_result = torch.squeeze(model(img_tensor))
         predict = torch.softmax(denseNet_result, dim=0)
-        top5_prob, top5_id = torch.topk(predict, 3)
+        top5_prob, top5_id = torch.topk(predict, 5)
         top5_id = top5_id.cpu().numpy()
         ids = []
+        print(top5_id)
         for id in top5_id:
             ids.append(id)
         # ids.sort()
-        for i in range(3):
-            pos = i
-            if pos < 0:
-                pos = 0
-            ids = swapPositions(top5_id, 0, pos)
-            print(ids, label)
-            if int(label) != top5_id[0]:
-                print(top5_id)
-                print(file)
-                total += 1
-            if int(label) not in ids:
-                not_in_top5 += 1
-                continue
-                    # print(ids, label)
-                    # if int(label) in ids:
+        # random.shuffle(ids)
+        # print(ids, label)
+        if int(label) != top5_id[0]:
+            print(top5_id)
+            print(file)
+            total += 1
+        # if int(label) not in ids:
+        #     print(ids, label)
+        # for i in range(3):
+        #     pos = i
+        #     if pos < 0:
+        #         pos = 0
+        #     ids = swapPositions(top5_id, 0, pos)
+            # print(res)
+        if int(label) in ids:
+            # random.shuffle(ids)
+            print(ids, label, file)
             res = [fx, ids, label, file]
             many_res.append(res)
 
@@ -127,6 +122,7 @@ print(len(many_res))
 for i in range(0, len(many_res)):
     myRes[i] = many_res[i]
 
-print('not_in_top5: ', not_in_top5)
-np.save('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/pill_dbl_train_top3', myRes)
+np.save('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/dbl_test_all_top5', myRes)
+# np.save('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/dbl_train_all_top3', myRes)
+# np.save('/media/wall/4TB_HDD/full_dataset/0710_dataset/numpy/dbl_train_all_top5', myRes)
 # 22554
